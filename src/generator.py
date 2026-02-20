@@ -8,6 +8,8 @@ def move_files(src_dir, dest_dir):
     try:
         if os.path.exists(dest_folder):
             shutil.rmtree(dest_folder)
+        else:
+            os.makedirs(dest_folder)
     except Exception as e:
         print('Failed to delete %s. Reason: %s' % (dest_folder, e))
 
@@ -23,7 +25,7 @@ def move_files(src_dir, dest_dir):
         except Exception as e:
             print('Failed to copy %s. Reason: %s' % (src_file_path, e))
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     md_file = None
@@ -68,6 +70,10 @@ def generate_page(from_path, template_path, dest_path):
     template_content = template_content.replace("{{ Content }}", html_content)
     template_content = template_content.replace("{{ Title }}", title)
 
+    print(f"using basepath: {basepath}")
+    template_content = template_content.replace("href:\"/", f"href:\"{basepath}")
+    template_content = template_content.replace("src:\"/", f"src:\"{basepath}")
+
     dest_path = os.path.abspath(dest_path)
     if os.path.isdir(dest_path):
         dest_file_path = os.path.join(dest_path, "index.html")
@@ -77,7 +83,7 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_file_path, "w") as f:
         f.write(template_content)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     dir_path_content = os.path.abspath(dir_path_content)
     template_path = os.path.abspath(template_path)
     dest_dir_path = os.path.abspath(dest_dir_path)
@@ -85,8 +91,8 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
     for filename in os.listdir(dir_path_content):
         content_file_path = os.path.join(dir_path_content, filename)
         if os.path.isfile(content_file_path) and filename.endswith(".md"):
-            generate_page(content_file_path, template_path, dest_dir_path)
+            generate_page(content_file_path, template_path, dest_dir_path, basepath)
         elif os.path.isdir(content_file_path):
             new_dest_dir_path = os.path.join(dest_dir_path, filename)
             os.makedirs(new_dest_dir_path, exist_ok=True)
-            generate_pages_recursive(content_file_path, template_path, new_dest_dir_path)
+            generate_pages_recursive(content_file_path, template_path, new_dest_dir_path, basepath)
